@@ -560,6 +560,11 @@ GET /api/tree                               Instance tree with databases (for si
 GET /api/instances                          All instances with version info
 GET /api/instances/{id}                     Instance detail + Summary_Get row
 GET /api/tags                               DBA Dash tags and active instance counts (Admin only)
+GET /api/tags/details                       Tags with id, value, system flag and scoped instance ids
+POST /api/tags                              Create a user tag on instances (Admin only)
+POST /api/tags/{tagId}/instances/{id}       Apply a user tag to an instance (Admin only)
+DELETE /api/tags/{tagId}/instances/{id}     Remove a user tag from an instance (Admin only)
+DELETE /api/tags/{tagId}                    Delete a user tag (Admin only)
 ```
 </details>
 

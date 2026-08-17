@@ -104,6 +104,7 @@ app.MapMonitoringEndpoints();
 app.MapEstateEndpoints();
 app.MapReportEndpoints();
 app.MapAlertsEndpoints();
+app.MapTagsEndpoints();
 
 app.MapFallbackToFile("index.html");
 

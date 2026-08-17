@@ -16,6 +16,7 @@ import type {
   ClosedAlertRow,
   CloseAlertsRequest,
   CreateLocalUserRequest,
+  CreateTagRequest,
   DbSpaceRow,
   EstateBackupRow,
   DriveGrowthPoint,
@@ -52,6 +53,7 @@ import type {
   RunningQueryRow,
   SchemaChangeRow,
   SlowQueryRow,
+  TagRow,
   TempDbFileRow,
   ThresholdMap,
   TreeInstanceNode,
@@ -251,4 +253,13 @@ export const api = {
     request<{ success: boolean }>('/api/alerts/close', { method: 'POST', body: JSON.stringify(payload) }),
   updateAlertNotes: (alertId: number, payload: UpdateAlertNotesRequest) =>
     request<{ success: boolean }>(`/api/alerts/${alertId}/notes`, { method: 'PUT', body: JSON.stringify(payload) }),
+  tagDetails: () => request<TagRow[]>('/api/tags/details'),
+  createTag: (payload: CreateTagRequest) =>
+    request<TagRow>('/api/tags', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteTag: (tagId: number) =>
+    request<{ success: boolean }>(`/api/tags/${tagId}`, { method: 'DELETE' }),
+  attachTag: (tagId: number, instanceId: number) =>
+    request<{ success: boolean }>(`/api/tags/${tagId}/instances/${instanceId}`, { method: 'POST' }),
+  detachTag: (tagId: number, instanceId: number) =>
+    request<{ success: boolean }>(`/api/tags/${tagId}/instances/${instanceId}`, { method: 'DELETE' }),
 };
