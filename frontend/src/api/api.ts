@@ -47,6 +47,7 @@ import type {
   RunningQueryRow,
   SchemaChangeRow,
   SlowQueryRow,
+  TagRow,
   TempDbFileRow,
   ThresholdMap,
   TreeInstanceNode,
@@ -229,4 +230,5 @@ export const api = {
     request<LocalUser>('/api/settings/users', { method: 'POST', body: JSON.stringify(payload) }),
   updateLocalUser: (id: string, payload: UpdateLocalUserRequest) =>
     request<LocalUser>(`/api/settings/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  tags: () => request<TagRow[]>('/api/tags'),
 };

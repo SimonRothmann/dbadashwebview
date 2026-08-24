@@ -748,6 +748,17 @@ export interface TempDbFileRow extends ApiRow {
   usedKb?: number | null;
 }
 
+export interface TagRow extends ApiRow {
+  tagId: number;
+  tagName: string;
+  tagValue?: string | null;
+  isSystem: boolean;
+  /** Every active instance carrying the tag, from both association sources. */
+  instanceIds: number[];
+  /** Subset of instanceIds whose association is an inherited Azure server-level tag. */
+  inheritedInstanceIds: number[];
+}
+
 export interface DbSpaceRow extends ApiRow {
   databaseName?: string | null;
   fileName?: string | null;
