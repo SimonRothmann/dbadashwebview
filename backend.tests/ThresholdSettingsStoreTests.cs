@@ -121,6 +121,68 @@ public sealed class ThresholdSettingsStoreTests
         });
     }
 
+    // --- durability -------------------------------------------------------
+
+    // Note on scope: writing via a temporary file and moving it is what makes a
+    // save crash-safe, and that is a property of the file operations rather than
+    // something these tests can observe — simulating a crash mid-serialization
+    // would need a fault-injection seam in the serializer. What is covered here
+    // is that a completed save leaves the directory clean and never drops half
+    // the file's contents.
+
+    [Fact]
+    public async Task SaveAsync_LeavesNoTemporaryFileBehind()
+    {
+        await WithTempStore(async (store, path) =>
+        {
+            await store.SaveAsync(new Dictionary<string, ThresholdValue> { ["cpu"] = new(10, 90) });
+            await store.SaveOverridesAsync([new ThresholdOverride("cpu", "instance", 1, 20, 30)]);
+
+            var directory = Path.GetDirectoryName(path)!;
+            var files = Directory.GetFiles(directory).Select(Path.GetFileName).ToArray();
+
+            Assert.Equal(new[] { Path.GetFileName(path) }, files);
+
+            var (global, overrides) = await store.GetSettingsAsync();
+            Assert.Equal(90, global["cpu"].Critical);
+            Assert.Single(overrides);
+        });
+    }
+
+    [Fact]
+    public async Task SaveOverridesAsync_DoesNotDiscardGlobalThresholds()
+    {
+        // The two live in one file. Writing straight to it truncated the only
+        // copy before serialization finished, so an interruption took out both
+        // halves at once; this pins that a successful save keeps both.
+        await WithTempStore(async store =>
+        {
+            await store.SaveAsync(new Dictionary<string, ThresholdValue> { ["cpu"] = new(10, 90) });
+            await store.SaveOverridesAsync([new ThresholdOverride("cpu", "tag", 4, 20, 30)]);
+
+            var (global, overrides) = await store.GetSettingsAsync();
+
+            Assert.Equal(90, global["cpu"].Critical);
+            Assert.Equal(4, Assert.Single(overrides).ScopeId);
+        });
+    }
+
+    [Fact]
+    public async Task WriteFile_KeepsPreviousContent_WhenTheTargetAlreadyExists()
+    {
+        await WithTempStore(async (store, path) =>
+        {
+            await store.SaveAsync(new Dictionary<string, ThresholdValue> { ["cpu"] = new(10, 90) });
+            var firstWrite = await File.ReadAllTextAsync(path);
+
+            await store.SaveAsync(new Dictionary<string, ThresholdValue> { ["cpu"] = new(15, 95) });
+            var secondWrite = await File.ReadAllTextAsync(path);
+
+            Assert.NotEqual(firstWrite, secondWrite);
+            Assert.Equal(95, (await store.GetAsync())["cpu"].Critical);
+        });
+    }
+
     private static async Task WithTempStore(Func<ThresholdSettingsStore, Task> test) =>
         await WithTempStore((store, _) => test(store));
 

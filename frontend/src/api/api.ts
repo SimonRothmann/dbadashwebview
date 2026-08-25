@@ -51,7 +51,6 @@ import type {
   TempDbFileRow,
   ThresholdMap,
   ThresholdOverride,
-  ThresholdScopeTagOption,
   ThresholdSettingsResponse,
   TreeInstanceNode,
   UnderutilizedReportRow,
@@ -117,7 +116,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export { isAuthenticated, setAuthSession };
-export type { ThresholdMap, ThresholdOverride, ThresholdScopeTagOption, ThresholdSettingsResponse } from './types';
+export type { ThresholdMap, ThresholdOverride, ThresholdSettingsResponse } from './types';
 
 export const api = {
   authStatus: () => request<AuthStatusResponse>('/api/auth/status'),
@@ -222,8 +221,6 @@ export const api = {
     request<{ success: boolean }>('/api/settings/thresholds', { method: 'POST', body: JSON.stringify({ thresholds }) }),
   saveThresholdOverrides: (overrides: ThresholdOverride[]) =>
     request<{ success: boolean }>('/api/settings/thresholds/overrides', { method: 'POST', body: JSON.stringify({ overrides }) }),
-  getThresholdScopeTags: () =>
-    request<{ data: ThresholdScopeTagOption[] }>('/api/settings/thresholds/tags'),
   getAdConfig: async () => {
     const response = await request<AdConfig>('/api/settings/ad');
     return { ...response, bindPassword: '' };
