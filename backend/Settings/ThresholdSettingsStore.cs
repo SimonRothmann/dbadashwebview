@@ -140,15 +140,46 @@ public sealed class ThresholdSettingsStore
         return new ThresholdSettingsFile(legacy, []);
     }
 
+    /// <summary>
+    /// Serializes to a temporary file in the same directory, flushes it to disk and
+    /// then moves it over the target.
+    ///
+    /// Writing straight to <c>_path</c> would truncate the only copy before
+    /// serialization finishes, so an interruption part-way through would take out
+    /// every global threshold and every override at once. The temporary file shares
+    /// the directory so the replace stays on one volume and is therefore atomic.
+    /// </summary>
     private async Task WriteFileAsync(ThresholdSettingsFile file, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        await using var stream = File.Create(_path);
-        await JsonSerializer.SerializeAsync(
-            stream,
-            new ThresholdSettingsFileDto(file.Global, file.Overrides),
-            JsonOptions,
-            cancellationToken);
+        var directory = Path.GetDirectoryName(_path)!;
+        Directory.CreateDirectory(directory);
+
+        var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(_path)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            await using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                await JsonSerializer.SerializeAsync(
+                    stream,
+                    new ThresholdSettingsFileDto(file.Global, file.Overrides),
+                    JsonOptions,
+                    cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+            }
+
+            // File.Move overwrites in one step; Replace would fail when the
+            // destination does not exist yet, which is the first-save case.
+            File.Move(temporaryPath, _path, overwrite: true);
+        }
+        catch
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+
+            throw;
+        }
     }
 
     private sealed record ThresholdSettingsFile(Dictionary<string, ThresholdValue> Global, List<ThresholdOverride> Overrides);

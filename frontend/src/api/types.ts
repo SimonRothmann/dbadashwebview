@@ -539,14 +539,6 @@ export interface ThresholdSettingsResponse {
   overrides: ThresholdOverride[];
 }
 
-export interface ThresholdScopeTagOption {
-  tagId: number;
-  tagName: string;
-  tagValue: string | null;
-  isSystem: boolean;
-  instanceIds: number[];
-}
-
 export interface SearchInstanceRow extends ApiRow {
   InstanceID: number;
   InstanceDisplayName?: string;

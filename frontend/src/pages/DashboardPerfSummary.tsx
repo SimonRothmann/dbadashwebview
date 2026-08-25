@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/api';
 import type { DashboardPerformanceRow, ThresholdMap, ThresholdOverride } from '../api/types';
+import { resolveThreshold } from '../utils/thresholds';
 import { RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, Clock, Loader2 } from 'lucide-react';
 
 type SortDir = 'asc' | 'desc';
@@ -23,35 +24,6 @@ const columns = [
 ] as const;
 
 type DashboardPerformanceColumnKey = typeof columns[number]['key'];
-
-/**
- * Most-specific-wins: an override scoped to this exact instance beats one scoped
- * to a tag the instance carries, which beats the global default. When an
- * instance carries multiple tags with conflicting overrides for the same
- * metric, the most sensitive (lowest critical) one wins so nothing gets missed.
- */
-function resolveThreshold(
-  metricKey: string,
-  instanceId: number,
-  thresholds: ThresholdMap,
-  overrides: ThresholdOverride[],
-  instanceTagIds: Map<number, number[]>
-): ThresholdMap[string] | null {
-  const instanceOverride = overrides.find(
-    (o) => o.scopeType === 'instance' && o.scopeId === instanceId && o.metricKey === metricKey
-  );
-  if (instanceOverride) return instanceOverride;
-
-  const tagIds = instanceTagIds.get(instanceId) || [];
-  const tagOverrides = overrides.filter(
-    (o) => o.scopeType === 'tag' && o.metricKey === metricKey && tagIds.includes(o.scopeId)
-  );
-  if (tagOverrides.length > 0) {
-    return tagOverrides.reduce((most, current) => (current.critical < most.critical ? current : most));
-  }
-
-  return thresholds[metricKey] || null;
-}
 
 function getCellClass(
   key: string,
@@ -92,7 +64,7 @@ export default function DashboardPerfSummary() {
       const [perfRes, thresholdRes, tagsRes] = await Promise.all([
         api.dashboardPerformanceSummary().catch(() => ({ data: [], note: '' })),
         api.getThresholds().catch(() => ({ thresholds: {}, overrides: [] })),
-        api.getThresholdScopeTags().catch(() => ({ data: [] })),
+        api.tags().catch(() => []),
       ]);
       const incoming = Array.isArray(perfRes.data) ? perfRes.data : [];
       setData((previous) => {
@@ -119,7 +91,7 @@ export default function DashboardPerfSummary() {
       setThresholds(thresholdRes.thresholds || {});
       setOverrides(thresholdRes.overrides || []);
       const tagMap = new Map<number, number[]>();
-      for (const tag of tagsRes.data || []) {
+      for (const tag of Array.isArray(tagsRes) ? tagsRes : []) {
         for (const instanceId of tag.instanceIds) {
           const existing = tagMap.get(instanceId);
           if (existing) existing.push(tag.tagId);

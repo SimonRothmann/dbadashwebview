@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/api';
-import type { InstanceListRow, ThresholdMap, ThresholdOverride, ThresholdScopeTagOption, ThresholdScopeType } from '../api/types';
+import type { InstanceListRow, TagRow, ThresholdMap, ThresholdOverride, ThresholdScopeType } from '../api/types';
 import { Settings, Save, Plus, Trash2 } from 'lucide-react';
 
 const metrics = [
@@ -29,7 +29,7 @@ export default function ThresholdsPage() {
 
   const [overrides, setOverrides] = useState<ThresholdOverride[]>([]);
   const [instances, setInstances] = useState<InstanceListRow[]>([]);
-  const [tags, setTags] = useState<ThresholdScopeTagOption[]>([]);
+  const [tags, setTags] = useState<TagRow[]>([]);
   const [savingOverride, setSavingOverride] = useState(false);
 
   const [newScopeType, setNewScopeType] = useState<ThresholdScopeType>('instance');
@@ -44,7 +44,7 @@ export default function ThresholdsPage() {
       if (Array.isArray(res.overrides)) setOverrides(res.overrides);
     }).catch(() => {});
     api.instances().then(res => setInstances(Array.isArray(res) ? res : [])).catch(() => {});
-    api.getThresholdScopeTags().then(res => setTags(Array.isArray(res.data) ? res.data : [])).catch(() => {});
+    api.tags().then(res => setTags(Array.isArray(res) ? res : [])).catch(() => {});
   }, []);
 
   const instanceName = useMemo(() => {
