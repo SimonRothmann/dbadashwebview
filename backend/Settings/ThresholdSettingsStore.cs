@@ -165,6 +165,9 @@ public sealed class ThresholdSettingsStore
                     JsonOptions,
                     cancellationToken);
                 await stream.FlushAsync(cancellationToken);
+                // Push the bytes past the OS cache too, so the move below can
+                // never expose a file whose contents are still only in memory.
+                stream.Flush(flushToDisk: true);
             }
 
             // File.Move overwrites in one step; Replace would fail when the
