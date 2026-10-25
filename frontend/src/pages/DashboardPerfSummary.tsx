@@ -64,7 +64,7 @@ export default function DashboardPerfSummary() {
       const [perfRes, thresholdRes, tagsRes] = await Promise.all([
         api.dashboardPerformanceSummary().catch(() => ({ data: [], note: '' })),
         api.getThresholds().catch(() => ({ thresholds: {}, overrides: [] })),
-        api.tags().catch(() => []),
+        api.tagDetails().catch(() => []),
       ]);
       const incoming = Array.isArray(perfRes.data) ? perfRes.data : [];
       setData((previous) => {

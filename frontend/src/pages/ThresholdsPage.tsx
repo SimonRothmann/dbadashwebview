@@ -44,7 +44,7 @@ export default function ThresholdsPage() {
       if (Array.isArray(res.overrides)) setOverrides(res.overrides);
     }).catch(() => {});
     api.instances().then(res => setInstances(Array.isArray(res) ? res : [])).catch(() => {});
-    api.tags().then(res => setTags(Array.isArray(res) ? res : [])).catch(() => {});
+    api.tagDetails().then(res => setTags(Array.isArray(res) ? res : [])).catch(() => {});
   }, []);
 
   const instanceName = useMemo(() => {
